@@ -21,16 +21,10 @@ class WordGenerator(VBAGenerator):
     """ Module used to generate MS Word file from working dir content"""
     
     def getAutoOpenVbaFunction(self):
-        if ".dot" in self.outputFilePath:
-            return "AutoNew"
-        else:
-            return "AutoOpen"
+        return "AutoNew" if ".dot" in self.outputFilePath else "AutoOpen"
     
     def getAutoOpenVbaSignature(self):
-        if ".dot" in self.outputFilePath:
-            return "Sub AutoNew()"
-        else:
-            return "Sub AutoOpen()"
+        return "Sub AutoNew()" if ".dot" in self.outputFilePath else "Sub AutoOpen()"
     
     def enableVbom(self):
         # Enable writing in macro (VBOM)
@@ -43,7 +37,7 @@ class WordGenerator(VBAGenerator):
         del objWord
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\Office\\" + self.version + "\\Word\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -53,7 +47,7 @@ class WordGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\Office\\" + self.version + "\\Word\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -117,28 +111,28 @@ class WordGenerator(VBAGenerator):
         logging.info(" [+] Generating MS Word document...")
         try:
             self.enableVbom()
-    
+
             logging.info("   [-] Open document...")
             # open up an instance of Word with the win32com driver
             word = win32com.client.Dispatch("Word.Application")
             # do the operation in background without actually opening Excel
             word.Visible = False
             document = word.Documents.Add()
-    
+
             logging.info("   [-] Save document format...")
-            wdFormatDocument = 0
             wdXMLFileFormatMap = {".docx": 12, ".docm": 13, ".dotm": 15}
-            
+
             if MSTypes.WD97 == self.outputFileType:
+                wdFormatDocument = 0
                 document.SaveAs(self.outputFilePath, FileFormat=wdFormatDocument)
             elif MSTypes.WD == self.outputFileType:
                 document.SaveAs(self.outputFilePath, FileFormat=wdXMLFileFormatMap[self.outputFilePath[-5:]])
-                        
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
             # Read generated files
             for vbaFile in self.getVBAFiles():
-                logging.debug("     -> File %s" % vbaFile)
+                logging.debug(f"     -> File {vbaFile}")
                 if vbaFile == self.getMainVBAFile():       
                     with open(vbaFile, "r") as f:
                         # Add the main macro- into ThisDocument part of Word document
@@ -156,22 +150,22 @@ class WordGenerator(VBAGenerator):
                         document.Application.Options.Pagination = False
                         document.UndoClear()
                         document.Repaginate()
-                        document.Application.ScreenUpdating = True 
+                        document.Application.ScreenUpdating = True
                         document.Application.ScreenRefresh()
-                        logging.debug("   [-] Saving module %s..." %  wordModule.Name)
+                        logging.debug(f"   [-] Saving module {wordModule.Name}...")
                         try:
                             document.Save()
                         except:
                             import time  # Retry
                             time.sleep(1)
                             document.Save()
-            
+
             #word.DisplayAlerts=False
             # Remove Informations
             logging.info("   [-] Remove hidden data and personal info...")
             wdRDIAll=99
             document.RemoveDocumentInformation(wdRDIAll)
-            
+
             # save the document and close
             #input('Press ENTER to continue...')
             try:
@@ -185,11 +179,14 @@ class WordGenerator(VBAGenerator):
             # garbage collection
             del word
             self.disableVbom()
-            
+
             if self.mpSession.ddeMode: # DDE Attack mode
                 self.insertDDE()
-    
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (utils.getRunningApp(),self.outputFilePath))
         except Exception:
             logging.exception(" [!] Exception caught!")

@@ -62,8 +62,8 @@ regsvr32 /u /n /s /i:meter.sct scrobj.dll
 
 
 def getTemplateUsage(currentApp):
-    templatesInfo = \
-r"""
+    return (
+        r"""
     Templates can be called using  -t, --template=TEMPLATE_NAME combined with other options.
     Available templates:
 
@@ -144,12 +144,24 @@ r"""
         -> Example2 : echo "main log privilege::debug sekurlsa::logonpasswords exit" | %s -t EMBED_DLL --embed=mimikatz.dll -o -G mimidropper.hta
 
                 --------------------
-""" % (currentApp,currentApp,currentApp,currentApp,currentApp,currentApp, currentApp,currentApp,currentApp,currentApp)
-    return templatesInfo
+"""
+        % (
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+            currentApp,
+        )
+    )
     
 
 def getGenerationFunction():
-    details = """ Main payload generation options:
+    return """ Main payload generation options:
     -G, --generate=OUTPUT_FILE_PATH. Generates a file. Will guess the payload format based on extension.
         MacroPack supports most Ms Office and VB based payloads as well various kinds of shortcut files. 
         Note: Office payload generation requires that MS Office application is installed on the machine 
@@ -160,12 +172,11 @@ def getGenerationFunction():
         MacroPack supports multiple predefined templates useful for social engineering, redteaming, and security bypass    
     --listtemplates View all templates provided by MacroPack
     -e, --embed=EMBEDDED_FILE_PATH Will embed the given file in the body of the generated document.
-        Use with EMBED_EXE template to auto drop and exec the file or with EMBED_DLL to drop/load the embedded dll.   """ 
-    return details
+        Use with EMBED_EXE template to auto drop and exec the file or with EMBED_DLL to drop/load the embedded dll.   """
 
 
 def getAvBypassFunction():
-    details = """ Security bypass options: 
+    return """ Security bypass options: 
     -o, --obfuscate Obfuscate code (remove spaces, obfuscate strings, obfuscate functions and variables name)
     If also possible to only apply parts of obfuscation using:
         --obfuscate-form to remove comments and space
@@ -176,13 +187,13 @@ def getAvBypassFunction():
         Choose between: alpha, alphanum, complete or provide the list of char you want (default is alpha)
     --obfuscate-names-minlen=<len> Set min length of obfuscated variables and functions (default is 7)
     --obfuscate-names-maxlen=<len> Set max length of obfuscated variables and functions (default is 15)
-    --uac-bypass Execute payload with high privileges if user is admin. Compatible with most MacroPack templates """ 
-    return details
+    --uac-bypass Execute payload with high privileges if user is admin. Compatible with most MacroPack templates """
 
 
 
 def getOtherFunction(currentApp):
-    details = """ Other options: 
+    return (
+        """ Other options: 
     -q, --quiet Do not display anything on screen, just process request.
     -p, --print Display result file on stdout (will display VBA for Office formats)
         Combine this option with -q option to pipe result into another program
@@ -200,20 +211,24 @@ def getOtherFunction(currentApp):
             In this case, windows or linux explorers will show the file named as: somethingath.jpg
     -l, --listen=ROOT_PATH\tOpen an HTTP server from ROOT_PATH listening on default port 80.
     -w, --webdav-listen=ROOT_PATH Open a WebDAV server on default port 80, giving access to ROOT_PATH.
-    --port=PORT Specify the listening port for HTTP and WebDAV servers.""" % currentApp
-    return details
+    --port=PORT Specify the listening port for HTTP and WebDAV servers."""
+        % currentApp
+    )
 
 
 def getCommunityUsage(currentApp):
-    details = """
+    return """
 %s
 
 %s
 
 %s
 
-""" % (getGenerationFunction(), getAvBypassFunction(), getOtherFunction(currentApp))
-    return details
+""" % (
+        getGenerationFunction(),
+        getAvBypassFunction(),
+        getOtherFunction(currentApp),
+    )
     
 
 
@@ -223,18 +238,18 @@ def printAvailableFormats(banner):
     print(colored(banner, 'green'))
     print("    Supported Office formats:")
     for fileType in MSTypes.MS_OFFICE_FORMATS:
-        print("       - %s: %s" % (fileType, MSTypes.EXTENSION_DICT[fileType]))
+        print(f"       - {fileType}: {MSTypes.EXTENSION_DICT[fileType]}")
     print("    Note: Ms Office file generation requires Windows OS with MS Office application installed.")
     print("\n    Supported VB formats:")
     for fileType in MSTypes.VBSCRIPTS_FORMATS:
-        print("       - %s: %s" % (fileType, MSTypes.EXTENSION_DICT[fileType]))
+        print(f"       - {fileType}: {MSTypes.EXTENSION_DICT[fileType]}")
     print("\n    Supported shortcuts/miscellaneous formats:")
     for fileType in MSTypes.Shortcut_FORMATS:
-        print("       - %s: %s" % (fileType, MSTypes.EXTENSION_DICT[fileType]))
+        print(f"       - {fileType}: {MSTypes.EXTENSION_DICT[fileType]}")
     print("\n    WARNING: These formats are only supported in MacroPack Pro:")
     for fileType in MSTypes.ProMode_FORMATS:
-        print("       - %s: %s" % (fileType, MSTypes.EXTENSION_DICT[fileType]))
-        
+        print(f"       - {fileType}: {MSTypes.EXTENSION_DICT[fileType]}")
+
     print("\n     To create a payload for a certain format just add extension to payload.\n     Ex.  -G payload.hta ")
     if MP_TYPE=="Pro":
         printAvailableFormatsPro()
@@ -263,9 +278,18 @@ r"""
 
 def printProUsage(banner, currentApp):
     print(colored(banner, 'green'))
-    print(" Usage 1: echo  <parameters> | %s -t <TEMPLATE> -G <OUTPUT_FILE> [options] " %currentApp)
-    print(" Usage 2: %s  -f input_file_path -G <OUTPUT_FILE> [options] " % currentApp)
-    print(" Usage 3: more input_file_path | %s -G <OUTPUT_FILE> [options] " %currentApp)
+    print(
+        f" Usage 1: echo  <parameters> | {currentApp} -t <TEMPLATE> -G <OUTPUT_FILE> [options] "
+    )
+
+    print(
+        f" Usage 2: {currentApp}  -f input_file_path -G <OUTPUT_FILE> [options] "
+    )
+
+    print(
+        f" Usage 3: more input_file_path | {currentApp} -G <OUTPUT_FILE> [options] "
+    )
+
     details = """
 %s
 %s

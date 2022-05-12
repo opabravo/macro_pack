@@ -31,7 +31,7 @@ class IqyGenerator(PayloadBuilder):
     
     def generate(self):
                 
-        logging.info(" [+] Generating %s file..." % self.outputFileType)        
+        logging.info(f" [+] Generating {self.outputFileType} file...")        
 
         paramArray = [MPParam("targetUrl")]
         self.fillInputParams(paramArray)
@@ -39,13 +39,10 @@ class IqyGenerator(PayloadBuilder):
         # Fill template
         urlContent = IQY_TEMPLATE
         urlContent = urlContent.replace("<<<URL>>>", getParamValue(paramArray, "targetUrl"))
-             
-        # Write in new file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(urlContent)
-        f.close()
-        
-        logging.info("   [-] Generated URL file: %s" % self.outputFilePath)
+
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(urlContent)
+        logging.info(f"   [-] Generated URL file: {self.outputFilePath}")
         logging.info("   [-] Test with : \n Click on %s file to test.\n" % self.outputFilePath)
         
 

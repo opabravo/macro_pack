@@ -57,25 +57,32 @@ class VBAGenerator(PayloadBuilder):
             logging.info("   [!] More then one VB file generated")
             for vbaFile in self.getVBAFiles():
                 with open(vbaFile,'r') as f:
-                    print(" =======================  %s  ======================== " % vbaFile)
+                    print(f" =======================  {vbaFile}  ======================== ")
                     print(f.read())
                     
     
     def generate(self):
-        if len(self.getVBAFiles())>0:
-            logging.info(" [+] Analyzing generated VBA files...")
-            if len(self.getVBAFiles())==1:
-                shutil.copy2(self.getMainVBAFile(), self.outputFilePath)
-                logging.info("   [-] Generated VBA file: %s" % self.outputFilePath) 
-            else:
-                logging.info("   [!] More then one VBA file generated, files will be copied in same dir as %s" % self.outputFilePath)
-                for vbaFile in self.getVBAFiles():
-                    if vbaFile != self.getMainVBAFile():
-                        shutil.copy2(vbaFile, os.path.join(os.path.dirname(self.outputFilePath),os.path.basename(vbaFile)))
-                        logging.info("   [-] Generated VBA file: %s" % os.path.join(os.path.dirname(self.outputFilePath),os.path.basename(vbaFile))) 
-                    else:
-                        shutil.copy2(self.getMainVBAFile(), self.outputFilePath)
-                        logging.info("   [-] Generated VBA file: %s" % self.outputFilePath)
+        if len(self.getVBAFiles()) <= 0:
+            return
+        logging.info(" [+] Analyzing generated VBA files...")
+        if len(self.getVBAFiles())==1:
+            shutil.copy2(self.getMainVBAFile(), self.outputFilePath)
+            logging.info(f"   [-] Generated VBA file: {self.outputFilePath}")
+        else:
+            logging.info(
+                f"   [!] More then one VBA file generated, files will be copied in same dir as {self.outputFilePath}"
+            )
+
+            for vbaFile in self.getVBAFiles():
+                if vbaFile != self.getMainVBAFile():
+                    shutil.copy2(vbaFile, os.path.join(os.path.dirname(self.outputFilePath),os.path.basename(vbaFile)))
+                    logging.info(
+                        f"   [-] Generated VBA file: {os.path.join(os.path.dirname(self.outputFilePath), os.path.basename(vbaFile))}"
+                    )
+
+                else:
+                    shutil.copy2(self.getMainVBAFile(), self.outputFilePath)
+                    logging.info(f"   [-] Generated VBA file: {self.outputFilePath}")
                         
     
     def getAutoOpenVbaFunction(self):
@@ -90,21 +97,25 @@ class VBAGenerator(PayloadBuilder):
         Ex for Excel it will replace "Sub AutoOpen ()" with "Sub Workbook_Open ()"
         """
         mainFile = self.getMainVBAFile()
-        if mainFile != "" and self.startFunction is not None:
-            if self.startFunction != self.getAutoOpenVbaFunction() and self.startFunction in self.potentialStartFunctions: # we do not replace if non autopopen start function is used
-                logging.info("   [-] Changing auto open function from %s to %s..." % (self.startFunction, self.getAutoOpenVbaFunction()))
-                #1 Replace line in VBA
-                f = open(mainFile)
+        if (
+            mainFile != ""
+            and self.startFunction is not None
+            and self.startFunction != self.getAutoOpenVbaFunction()
+            and self.startFunction in self.potentialStartFunctions
+        ):
+            logging.info(
+                f"   [-] Changing auto open function from {self.startFunction} to {self.getAutoOpenVbaFunction()}..."
+            )
+
+            with open(mainFile) as f:
                 content = f.readlines()
-                f.close()
-                for n,line in enumerate(content):
-                    if line.find(" " + self.startFunction) != -1:  
-                        #logging.info("     -> %s becomes %s" %(content[n], self.getAutoOpenVbaSignature()))  
-                        content[n] = self.getAutoOpenVbaSignature() + "\n"
-                f = open(mainFile, 'w')
+            for n,line in enumerate(content):
+                if line.find(f" {self.startFunction}") != -1:  
+                    #logging.info("     -> %s becomes %s" %(content[n], self.getAutoOpenVbaSignature()))  
+                    content[n] = self.getAutoOpenVbaSignature() + "\n"
+            with open(mainFile, 'w') as f:
                 f.writelines(content)
-                f.close()   
-                # 2 Change  current module start function
-                self._startFunction = self.getAutoOpenVbaFunction()
+            # 2 Change  current module start function
+            self._startFunction = self.getAutoOpenVbaFunction()
                             
     

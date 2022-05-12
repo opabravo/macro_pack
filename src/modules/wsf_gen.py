@@ -25,27 +25,25 @@ class WSFGenerator(VBSGenerator):
         
         
     def generate(self):
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         self.vbScriptConvert()
-        f = open(self.getMainVBAFile()+".vbs")
-        vbsContent = f.read()
-        f.close()
-        
+        with open(f"{self.getMainVBAFile()}.vbs") as f:
+            vbsContent = f.read()
         #vbsContent = vbsContent.replace("WScript.Echo ", "MsgBox ")
-        
+
         # Write VBS in template
         wsfContent = WSF_TEMPLATE
         wsfContent = wsfContent.replace("<<<random>>>", randomAlpha(8))
         wsfContent = wsfContent.replace("<<<VBS>>>", vbsContent)
         wsfContent = wsfContent.replace("<<<MAIN>>>", self.startFunction)
-        # Write in new HTA file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(wsfContent)
-        f.close()
-        logging.info("   [-] Generated Windows Script File: %s" % self.outputFilePath)
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(wsfContent)
+        logging.info(f"   [-] Generated Windows Script File: {self.outputFilePath}")
         logging.info("   [-] Test with : \nwscript %s\n" % self.outputFilePath)
         if os.path.getsize(self.outputFilePath)> (1024*512):
-            logging.warning("   [!] Warning: The resulted %s file seems to be bigger than 512k, it will probably not work!" % self.outputFileType)
+            logging.warning(
+                f"   [!] Warning: The resulted {self.outputFileType} file seems to be bigger than 512k, it will probably not work!"
+            )
         
         
         

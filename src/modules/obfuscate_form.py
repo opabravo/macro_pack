@@ -12,10 +12,9 @@ class ObfuscateForm(MpModule):
         # Identify function, subs and variables names
         keyWords = []
         for line in macroLines:
-            matchObj = re.match( r".*('.+)$", line, re.M|re.I) 
-            if matchObj:
+            if matchObj := re.match(r".*('.+)$", line, re.M | re.I):
                 keyWords.append(matchObj.groups()[0])
-    
+
         # Replace functions by random string
         for keyWord in keyWords:
             for n,line in enumerate(macroLines):
@@ -43,10 +42,8 @@ class ObfuscateForm(MpModule):
             logging.info("   [-] Remove spaces...")
         logging.info("   [-] Remove comments...")
         for vbaFile in self.getVBAFiles():
-            f = open(vbaFile)
-            content = f.readlines()
-            f.close()
-            
+            with open(vbaFile) as f:
+                content = f.readlines()
             # Remove comments
             content = self._removeComments(content) # must remove comments before space to avoir empty lines
 
@@ -55,11 +52,9 @@ class ObfuscateForm(MpModule):
                 content =  self._removeTabs(content)
                 # Remove spaces
                 content =  self._removeSpaces(content)
-        
-            # Write in new file 
-            f = open(vbaFile, 'w')
-            f.writelines(content)
-            f.close()
+
+            with open(vbaFile, 'w') as f:
+                f.writelines(content)
         logging.info("   [-] OK!") 
             
             

