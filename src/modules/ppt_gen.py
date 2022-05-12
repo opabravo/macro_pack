@@ -37,7 +37,7 @@ class PowerPointGenerator(VBAGenerator):
         del ppt
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\PowerPoint\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -47,7 +47,7 @@ class PowerPointGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\PowerPoint\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -108,13 +108,13 @@ class PowerPointGenerator(VBAGenerator):
         logging.info(" [+] Generating MS PowerPoint document...")
         try:
             self.enableVbom()
-            
+
             # open up an instance of PowerPoint with the win32com driver
             ppt = win32com.client.Dispatch("PowerPoint.Application")
-    
+
             logging.info("   [-] Open presentation...")
             presentation = ppt.Presentations.Add(WithWindow = False)
-            
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
             # Read generated files
@@ -125,30 +125,33 @@ class PowerPointGenerator(VBAGenerator):
                     pptModule = presentation.VBProject.VBComponents.Add(1)
                     pptModule.Name = os.path.splitext(os.path.basename(vbaFile))[0]
                     pptModule.CodeModule.AddFromString(macro)
-            
+
             # Remove Informations
             logging.info("   [-] Remove hidden data and personal info...")
             ppRDIAll=99
             presentation.RemoveDocumentInformation(ppRDIAll)
-            
+
             logging.info("   [-] Save presentation...")
-            pptXMLFileFormatMap = {".pptm": 25, ".potm": 27}
             if MSTypes.PPT == self.outputFileType:
+                pptXMLFileFormatMap = {".pptm": 25, ".potm": 27}
                 presentation.SaveAs(self.outputFilePath, FileFormat=pptXMLFileFormatMap[self.outputFilePath[-5:]])
             # save the presentation and close
             ppt.Presentations(1).Close()
             ppt.Quit()
             # garbage collection
             del ppt
-            
+
             self.disableVbom()
-            
+
             logging.info("   [-] Inject Custom UI...")
             self._injectCustomUi()
-               
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (utils.getRunningApp(),self.outputFilePath))
-        
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")

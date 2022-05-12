@@ -40,9 +40,9 @@ class ListenServer(MpModule):
         logging.info(" [+] Starting Macro_Pack web server...")
         if os.path.isdir(self.listenRoot):
             logging.info("   [-] Files in \"" + self.listenRoot + "\" folder are accessible via http://{ip}:{port}/".format(ip=getHostIp(), port=self.listenPort))
-            logging.info("   [-] Listening on port %s (ctrl-c to exit)..." % self.listenPort)
+            logging.info(f"   [-] Listening on port {self.listenPort} (ctrl-c to exit)...")
             handler_class = partial(WebServer, directory=self.listenRoot)
             httpdServer = HTTPServer(("0.0.0.0", self.listenPort), handler_class)
             httpdServer.serve_forever()
         else:
-            logging.info("   [!] Error: Could not find local folder %s" % self.listenRoot)
+            logging.info(f"   [!] Error: Could not find local folder {self.listenRoot}")

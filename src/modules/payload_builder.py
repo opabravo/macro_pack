@@ -40,18 +40,18 @@ class PayloadBuilder(MpModule):
     
     def run(self):
         
-        logging.info(" [+] Prepare %s file generation..." % self.outputFileType)
+        logging.info(f" [+] Prepare {self.outputFileType} file generation...")
         # Check feasibility
         if not self.check():
             return
-        
+
         # generate template
         if self.mpSession.template:
             generator = TemplateFactory(self.mpSession)
             if not generator.run():
                 logging.error("   [!] Error while generating template.")
                 return
-        
+
         # embed a file if asked
         if self.embeddedFilePath:
             generator = Embedder(self.mpSession)
@@ -60,7 +60,7 @@ class PayloadBuilder(MpModule):
         self.transformAndObfuscate()
         # generate
         self.generate()
-        
+
         # Shall we display result?
         if self.mpSession.printFile:
             self.printFile()

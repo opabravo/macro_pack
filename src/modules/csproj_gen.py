@@ -128,33 +128,30 @@ class CsProjGenerator(PayloadBuilder):
         
         
     def generate(self):
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
-        
+        logging.info(f" [+] Generating {self.outputFileType} file...")
+
         outputFolderPath = os.path.dirname(self.outputFilePath)
         appConfigName = os.path.join(outputFolderPath,"App.config")
         csprojName = self.outputFilePath
         csName = os.path.join(outputFolderPath,"Hello.cs")
-        
+
         logging.info("   [-] Generating csproj file...")
         csprojContent = CSPROJ_TEMPLATE
         self.mpSession.dosCommand = self.mpSession.dosCommand.replace("&", "&amp;") # & is invalid char in XML
         csprojContent = csprojContent.replace("<<<TARGET>>>",CSPROJ_TARGET_TEMPLATE)
         csprojContent = csprojContent.replace("<<<CMDLINE>>>",self.mpSession.dosCommand)
-        f = open(csprojName, 'w')
-        f.write(csprojContent)
-        f.close()
-        
+        with open(csprojName, 'w') as f:
+            f.write(csprojContent)
         logging.info("   [-] Add config file...")
-        f = open(appConfigName, 'w')
-        f.write(APP_CONFIG_TEMPLATE)
-        f.close()
-        
+        with open(appConfigName, 'w') as f:
+            f.write(APP_CONFIG_TEMPLATE)
         logging.info("   [-] Add cs file...")
-        f = open(csName, 'w')
-        f.write(HELLO_CS_TEMPLATE)
-        f.close()
-        
-        logging.info("   [-] Generated %s file: %s" % (self.outputFileType, self.outputFilePath))
+        with open(csName, 'w') as f:
+            f.write(HELLO_CS_TEMPLATE)
+        logging.info(
+            f"   [-] Generated {self.outputFileType} file: {self.outputFilePath}"
+        )
+
         logging.info(r"   [-] Test with : C:\Windows\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe /nologo /noconsolelogger %s " % self.outputFilePath)
        
     

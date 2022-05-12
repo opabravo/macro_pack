@@ -22,13 +22,11 @@ End Function
 
     def _splitStrings(self, macroLines):
         
-        # Find strings and randomly split them in half 
+        # Find strings and randomly split them in half
         for n,line in enumerate(macroLines):
             #Check if string is not preprocessor instruction, const or contain escape quotes
             if len(line) > 6 and "\"\"" not in line and "PtrSafe Function" not in line and "Declare Function" not in line and "Declare Sub" not in line and "PtrSafe Sub" not in line and "Environ" not in line:
-                # Find strings in line
-                findList = re.findall(r'"(.+?)"', line, re.I)
-                if findList:
+                if findList := re.findall(r'"(.+?)"', line, re.I):
                     for detectedString in findList:
                         if len(detectedString) > 4:
                             # Compute value to cut string randomly
@@ -50,9 +48,7 @@ End Function
         for n,line in enumerate(macroLines):
             #Check if string is not preprocessor instruction, const or contain escape quoting
             if line.lstrip() != "" and line.lstrip()[0] != '#' and "Const" not in line and "\"\"" not in line and "PtrSafe Function" not in line and "Declare Function" not in line and "PtrSafe Sub" not in line and "Declare Sub" not in line and "Environ" not in line:
-                # Find strings in line
-                findList = re.findall(r'"(.+?)"', line, re.I)
-                if findList:
+                if findList := re.findall(r'"(.+?)"', line, re.I):
                     for detectedString in findList: 
                         # Hex encode string
                         encodedBytes = codecs.encode(bytes(detectedString, "utf-8"), 'hex_codec')
@@ -62,57 +58,53 @@ End Function
                 # Replace line if result is not too big
                 if len(line) < 1024:
                     macroLines[n] = line
-        
+
         return macroLines
     
     
     
     def run(self):
-        if not self.mpSession.noStringsObfuscation:
-            logging.info(" [+] VBA strings obfuscation ...")
-            logging.info("   [-] Split strings...")
-            logging.info("   [-] Encode strings...")
-            # Compute new random function and variable names for HexToStr
-            if self.mpSession.obfuscateNames:
-                newFunctionName = self.mpSession.nameObfuscationCallback(14, self.mpSession.obfuscatedNamesCharset)
-                newVarName1 = self.mpSession.nameObfuscationCallback(9, self.mpSession.obfuscatedNamesCharset)
-                newVarName2 = self.mpSession.nameObfuscationCallback(8, self.mpSession.obfuscatedNamesCharset)
-            else:
-                newFunctionName = "HexToStr"
-                newVarName1 = "counter"
-                newVarName2 = "hexString"
-            for vbaFile in self.getVBAFiles():
-                # Check if there are strings in file
-                with open(vbaFile) as fileToCheck:
-                    data = fileToCheck.read()
-                if '"' not in data:
-                    continue
+        if self.mpSession.noStringsObfuscation:
+            return
+        logging.info(" [+] VBA strings obfuscation ...")
+        logging.info("   [-] Split strings...")
+        logging.info("   [-] Encode strings...")
+        # Compute new random function and variable names for HexToStr
+        if self.mpSession.obfuscateNames:
+            newFunctionName = self.mpSession.nameObfuscationCallback(14, self.mpSession.obfuscatedNamesCharset)
+            newVarName1 = self.mpSession.nameObfuscationCallback(9, self.mpSession.obfuscatedNamesCharset)
+            newVarName2 = self.mpSession.nameObfuscationCallback(8, self.mpSession.obfuscatedNamesCharset)
+        else:
+            newFunctionName = "HexToStr"
+            newVarName1 = "counter"
+            newVarName2 = "hexString"
+        for vbaFile in self.getVBAFiles():
+            # Check if there are strings in file
+            with open(vbaFile) as fileToCheck:
+                data = fileToCheck.read()
+            if '"' not in data:
+                continue
 
-                f = open(vbaFile)
+            with open(vbaFile) as f:
                 content = f.readlines()
-                f.close()
+            # Split string
+            content = self._splitStrings(content)
+            # mask string
+            content = self._maskStrings(content, newFunctionName)
 
-                # Split string
-                content = self._splitStrings(content)
-                # mask string
-                content = self._maskStrings(content, newFunctionName)
-
-                # Write in new file
-                f = open(vbaFile, 'w')
+            with open(vbaFile, 'w') as f:
                 f.writelines(content)
-                f.close()
+        # Add decode routine
+        if self.mpSession.mpType == "Pro":
+            from pro_vbLib.vbautils import HexToString
+            hexDecodeBlock = self.getVBLibContent(HexToString)
+        else:
+            hexDecodeBlock = self.hexToStringRoutine
+        if self.mpSession.obfuscateNames:
+            hexDecodeBlock = hexDecodeBlock.replace("HexToStr", newFunctionName).replace("counter", newVarName1).replace("hexString", newVarName2)
+            hexDecodeBlock = hexDecodeBlock.replace("wordInter", self.mpSession.nameObfuscationCallback(12, self.mpSession.obfuscatedNamesCharset)).replace("prefix", self.mpSession.nameObfuscationCallback(12, self.mpSession.obfuscatedNamesCharset))
+        #logging.info(hexDecodeBlock)
+        self.addVBAModule(hexDecodeBlock)
 
-            # Add decode routine
-            if self.mpSession.mpType == "Pro":
-                from pro_vbLib.vbautils import HexToString
-                hexDecodeBlock = self.getVBLibContent(HexToString)
-            else:
-                hexDecodeBlock = self.hexToStringRoutine
-            if self.mpSession.obfuscateNames:
-                hexDecodeBlock = hexDecodeBlock.replace("HexToStr", newFunctionName).replace("counter", newVarName1).replace("hexString", newVarName2)
-                hexDecodeBlock = hexDecodeBlock.replace("wordInter", self.mpSession.nameObfuscationCallback(12, self.mpSession.obfuscatedNamesCharset)).replace("prefix", self.mpSession.nameObfuscationCallback(12, self.mpSession.obfuscatedNamesCharset))
-            #logging.info(hexDecodeBlock)
-            self.addVBAModule(hexDecodeBlock)
-
-            logging.info("   [-] OK!")
+        logging.info("   [-] OK!")
             

@@ -36,7 +36,7 @@ class ExcelGenerator(VBAGenerator):
         del objExcel
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\Office\\" + self.version + "\\Excel\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -46,7 +46,7 @@ class ExcelGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\Office\\" + self.version + "\\Excel\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -115,7 +115,7 @@ class ExcelGenerator(VBAGenerator):
         logging.info(" [+] Generating MS Excel document...")
         try:
             self.enableVbom()
-            
+
             # open up an instance of Excel with the win32com driver\        \\
             excel = win32com.client.Dispatch("Excel.Application")
             # do the operation in background without actually opening Excel
@@ -123,12 +123,12 @@ class ExcelGenerator(VBAGenerator):
             # open the excel workbook from the specified file or create if file does not exist
             logging.info("   [-] Open workbook...")
             workbook = excel.Workbooks.Add()
-            
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
             # Read generated files
             for vbaFile in self.getVBAFiles():
-                logging.debug("     [,] Loading %s " % vbaFile)
+                logging.debug(f"     [,] Loading {vbaFile} ")
                 if vbaFile == self.getMainVBAFile():       
                     with open(vbaFile, "r") as f:
                         macro=f.read()
@@ -142,38 +142,41 @@ class ExcelGenerator(VBAGenerator):
                         excelModule = workbook.VBProject.VBComponents.Add(1)
                         excelModule.Name = os.path.splitext(os.path.basename(vbaFile))[0]
                         excelModule.CodeModule.AddFromString(macro)
-            
+
             excel.DisplayAlerts=False
             # Remove Informations
             logging.info("   [-] Remove hidden data and personal info...")
             xlRDIAll=99
             workbook.RemoveDocumentInformation(xlRDIAll)
-            
+
             logging.info("   [-] Save workbook...")
-            xlExcel8 = 56
             xlXMLFileFormatMap = {".xlsx": 51, ".xlsm": 52, ".xltm": 53}
 
             if self.outputFileType == MSTypes.XL97:
+                xlExcel8 = 56
                 workbook.SaveAs(self.outputFilePath, FileFormat=xlExcel8)
             elif MSTypes.XL == self.outputFileType:
                 workbook.SaveAs(self.outputFilePath, FileFormat=xlXMLFileFormatMap[self.outputFilePath[-5:]])
-            
-            
+
+
             # save the workbook and close
             excel.Workbooks(1).Close(SaveChanges=1)
             excel.Application.Quit()
             # garbage collection
             del excel
-            
+
             self.disableVbom()
-            
+
             if self.mpSession.ddeMode: # DDE Attack mode
                 self.insertDDE()
-            
-    
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (utils.getRunningApp(),self.outputFilePath))
-            
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")

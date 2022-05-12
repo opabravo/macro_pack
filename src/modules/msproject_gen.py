@@ -35,7 +35,7 @@ class MSProjectGenerator(VBAGenerator):
         del objProject
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\Project\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -44,7 +44,7 @@ class MSProjectGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\Project\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -73,16 +73,16 @@ class MSProjectGenerator(VBAGenerator):
         
         logging.info(" [+] Generating MSProject project...")
         try:
-        
+
             self.enableVbom()
-    
+
             logging.info("   [-] Open MSProject project...")
             # open up an instance of Word with the win32com driver
             MSProject = win32com.client.Dispatch("MSProject.Application")
             project = MSProject.Projects.Add()
             # do the operation in background 
             MSProject.Visible = False
-            
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
             # Read generated files
@@ -99,24 +99,27 @@ class MSProjectGenerator(VBAGenerator):
                         ProjectModule = project.VBProject.VBComponents.Add(1)
                         ProjectModule.Name = os.path.splitext(os.path.basename(vbaFile))[0]
                         ProjectModule.CodeModule.AddFromString(macro)
-    
-                
+
+
             # Remove Informations
             #logging.info("   [-] Remove hidden data and personal info...")
             #project.RemoveFileProperties = 1 
-            
+
             logging.info("   [-] Save MSProject project...")
             pjMPP = 0 # The file was saved with the current version of Microsoft Office MSProject.        
             project.SaveAs(self.outputFilePath,Format = pjMPP)
-            
+
             # save the project and close
             MSProject.FileClose ()
             MSProject.Quit()
             # garbage collection
             del MSProject
             self.disableVbom()
-    
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (getRunningApp(),self.outputFilePath))
         except Exception:
             logging.exception(" [!] Exception caught!")

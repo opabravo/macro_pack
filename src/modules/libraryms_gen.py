@@ -40,22 +40,22 @@ class LibraryShortcutGenerator(PayloadBuilder):
     
     def generate(self):
                 
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         paramArray = [MPParam("targetUrl")]
         self.fillInputParams(paramArray)
         targetUrl = getParamValue(paramArray, "targetUrl")
-        
+
         # Fill template
         content = LIBRARY_MS_TEMPLATE
         content = content.replace("<<<TARGET>>>", targetUrl)
         content = content.replace("<<<ICON>>>", self.mpSession.icon)
-             
-        # Write in new SCF file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(content)
-        f.close()
-        
-        logging.info("   [-] Generated MS Library Shortcut file: %s" % self.outputFilePath)
+
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(content)
+        logging.info(
+            f"   [-] Generated MS Library Shortcut file: {self.outputFilePath}"
+        )
+
         logging.info("   [-] Test with : \n Click on %s file to test.\n" % self.outputFilePath)
 
 

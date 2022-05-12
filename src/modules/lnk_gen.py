@@ -54,17 +54,17 @@ class LNKGenerator(PayloadBuilder):
     
     def generate(self):
         """ Generate LNK file """
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
-        targetArgs = None
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         CmdLine = self.mpSession.dosCommand.split(' ', 1)
         target = CmdLine[0]
-        if len(CmdLine) == 2:
-            targetArgs = CmdLine[1]
-        
+        targetArgs = CmdLine[1] if len(CmdLine) == 2 else None
         # Create lnk file
         self.buildLnkWithWscript(target, targetArgs, self.mpSession.icon) # ("Work_Directory",None)
-        
-        logging.info("   [-] Generated %s file: %s" % (self.outputFileType, self.outputFilePath))
+
+        logging.info(
+            f"   [-] Generated {self.outputFileType} file: {self.outputFilePath}"
+        )
+
         logging.info("   [-] Test with: \nBrowse %s dir to trigger icon resolution. Click on file to trigger shortcut.\n" % self.outputFilePath)
         
 

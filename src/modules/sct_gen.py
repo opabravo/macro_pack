@@ -34,29 +34,35 @@ class SCTGenerator(VBSGenerator):
         
         
     def generate(self):
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         self.vbScriptConvert()
-        f = open(self.getMainVBAFile()+".vbs")
-        vbsContent = f.read()
-        f.close()
-        
+        with open(f"{self.getMainVBAFile()}.vbs") as f:
+            vbsContent = f.read()
         vbsContent = vbsContent.replace("WScript.Echo ", "MsgBox ")
-        
+
         # Write VBS in template
         sctContent = SCT_TEMPLATE
         sctContent = sctContent.replace("<<<random>>>", randomAlpha(8))
-        sctContent = sctContent.replace("<<<CLS1>>>", ''.join([random.choice('0123456789ABCDEF') for x in range(8)]))  # @UnusedVariable
-        sctContent = sctContent.replace("<<<CLS4>>>", ''.join([random.choice('0123456789ABCDEF') for x in range(12)]))  # @UnusedVariable
+        sctContent = sctContent.replace(
+            "<<<CLS1>>>",
+            ''.join([random.choice('0123456789ABCDEF') for _ in range(8)]),
+        )
+
+        sctContent = sctContent.replace(
+            "<<<CLS4>>>",
+            ''.join([random.choice('0123456789ABCDEF') for _ in range(12)]),
+        )
+
         sctContent = sctContent.replace("<<<VBS>>>", vbsContent)
         sctContent = sctContent.replace("<<<MAIN>>>", self.startFunction)
-        # Write in new HTA file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(sctContent)
-        f.close()
-        logging.info("   [-] Generated Scriptlet file: %s" % self.outputFilePath)
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(sctContent)
+        logging.info(f"   [-] Generated Scriptlet file: {self.outputFilePath}")
         logging.info("   [-] Test with : \nregsvr32 /u /n /s /i:%s scrobj.dll\n" % self.outputFilePath)
         if os.path.getsize(self.outputFilePath)> (1024*512):
-            logging.warning("   [!] Warning: The resulted %s file seems to be bigger than 512k, it will probably not work!" % self.outputFileType)
+            logging.warning(
+                f"   [!] Warning: The resulted {self.outputFileType} file seems to be bigger than 512k, it will probably not work!"
+            )
 
         
         

@@ -33,24 +33,23 @@ class XSLGenerator(VBSGenerator):
         
         
     def generate(self):
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         self.vbScriptConvert()
-        f = open(self.getMainVBAFile()+".vbs")
-        vbsContent = f.read()
-        f.close()
-        
-        XSL_ECHO= r"""CreateObject("WScript.Shell").Run("cmd /c echo XSLT does not handle output message! & PAUSE") '""" 
+        with open(f"{self.getMainVBAFile()}.vbs") as f:
+            vbsContent = f.read()
+        XSL_ECHO= r"""CreateObject("WScript.Shell").Run("cmd /c echo XSLT does not handle output message! & PAUSE") '"""
         vbsContent = vbsContent.replace("WScript.Echo ", XSL_ECHO)
-        
+
         # Write VBS in template
         xslContent = XSL_TEMPLATE
         xslContent = xslContent.replace("<<<VBS>>>", vbsContent)
         xslContent = xslContent.replace("<<<MAIN>>>", self.startFunction)
-        # Write in new HTA file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(xslContent)
-        f.close()
-        logging.info("   [-] Generated %s file: %s" % (self.outputFileType, self.outputFilePath))
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(xslContent)
+        logging.info(
+            f"   [-] Generated {self.outputFileType} file: {self.outputFilePath}"
+        )
+
         logging.info("   [-] Test with : \nwmic os get /FORMAT:\"%s\"\n" % self.outputFilePath)
         
         

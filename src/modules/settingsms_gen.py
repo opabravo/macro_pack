@@ -46,22 +46,19 @@ class SettingsShortcutGenerator(PayloadBuilder):
     
     def generate(self):
                 
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         paramArray = [MPParam("Command line")]
         self.fillInputParams(paramArray)
-        
+
         # Fill template
         content = SETTINGS_MS_TEMPLATE
         content = content.replace("<<<CMD>>>", getParamValue(paramArray, "Command line"))
         content = content.replace("<<<ICON>>>", self.mpSession.icon)
-             
-        # Write in new SCF file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(content)
-        f.close()
-        
-        logging.info("   [-] Generated Settings Shortcut file: %s" % self.outputFilePath)
-        logging.info("   [-] Test with: Double click on %s file." % self.outputFilePath)
+
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(content)
+        logging.info(f"   [-] Generated Settings Shortcut file: {self.outputFilePath}")
+        logging.info(f"   [-] Test with: Double click on {self.outputFilePath} file.")
         logging.info("   [!] The attack via SettingContent-ms has been patched as CVE-2018-8414. \n       This payload is kept in MacroPack but its useless in offensive security scenario.\n")
         
 

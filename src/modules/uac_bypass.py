@@ -18,23 +18,18 @@ class UACBypass(MpModule):
         logging.info(" [+] Insert UAC Bypass routine ...")
         # Browse all vba modules and replace ExecuteCmdAsync by ExecUAC
         for vbaFile in self.getVBAFiles():
-            f = open(vbaFile)
-            content = f.readlines()
-            f.close()
-            
+            with open(vbaFile) as f:
+                content = f.readlines()
             for n,line in enumerate(content):
-                if "ExecuteCmdAsync" in line and not "Sub ExecuteCmdAsync" in line:
+                if "ExecuteCmdAsync" in line and "Sub ExecuteCmdAsync" not in line:
                     content[n] = line.replace("ExecuteCmdAsync","BypassUACExec")
-            
-            # Write in new file 
-            f = open(vbaFile, 'w')
-            f.writelines(content)
-            f.close()
-         
+
+            with open(vbaFile, 'w') as f:
+                f.writelines(content)
         self.addVBLib(vbLib.UACBypassExecuteCMDAsync)
         self.addVBLib(vbLib.IsAdmin)
         self.addVBLib(vbLib.Sleep)
         self.addVBLib(vbLib.GetOSVersion)
-            
+
         logging.info("   [-] OK!") 
         

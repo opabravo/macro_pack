@@ -14,7 +14,7 @@ class MpModule:
         self.outputFilePath = mpSession.outputFilePath
         self.outputFileType = mpSession.outputFileType
         self.template = mpSession.template
-        
+
         self.reservedFunctions = []
         if self._startFunction is not None:
             self.reservedFunctions.append(self._startFunction)
@@ -22,15 +22,16 @@ class MpModule:
         self.reservedFunctions.append("AutoExec")
         self.reservedFunctions.append("Workbook_Open")
         self.reservedFunctions.append("Document_Open")
-        self.reservedFunctions.append("Auto_Open")    
+        self.reservedFunctions.append("Auto_Open")
         self.reservedFunctions.append("Document_DocumentOpened")
-        self.potentialStartFunctions = []
-        self.potentialStartFunctions.append("AutoOpen")
-        self.potentialStartFunctions.append("AutoExec")
-        self.potentialStartFunctions.append("Workbook_Open")
-        self.potentialStartFunctions.append("Document_Open")  
-        self.potentialStartFunctions.append("Auto_Open") 
-        self.potentialStartFunctions.append("Document_DocumentOpened")    
+        self.potentialStartFunctions = [
+            "AutoOpen",
+            "AutoExec",
+            "Workbook_Open",
+            "Document_Open",
+            "Auto_Open",
+            "Document_DocumentOpened",
+        ]    
         
     @property
     def startFunction(self):
@@ -74,32 +75,28 @@ class MpModule:
         """ 
         Fill parameters dictionary using given input. If input is missing, ask for input to user.
         """
-        # Fill parameters based on input file
+        mandatoryParamLen = sum(
+            not paramArray[i].optional for i in range(len(paramArray))
+        )
+
         allMandatoryParamFilled = False
-        i = 0
-        mandatoryParamLen= 0
-        while i < len(paramArray):
-            if not paramArray[i].optional:
-                mandatoryParamLen += 1 
-            i += 1
         if mandatoryParamLen == 0:
             allMandatoryParamFilled = True
-        
+
         cmdFile = self.getCMDFile()
         if cmdFile is not None and cmdFile != "":
-            f = open(cmdFile, 'r')
-            valuesFileContent = f.read()
-            valuesFileContent = valuesFileContent.replace(r'\"', r'\\"') # This is necessary fo avoid schlex bux if string ends with \"
-            logging.debug("    -> CMD file content: \n%s" % valuesFileContent)
+            with open(cmdFile, 'r') as f:
+                valuesFileContent = f.read()
+                valuesFileContent = valuesFileContent.replace(r'\"', r'\\"') # This is necessary fo avoid schlex bux if string ends with \"
+                logging.debug("    -> CMD file content: \n%s" % valuesFileContent)
 
-            f.close()
             os.remove(cmdFile)
             if self.mpSession.fileInput is None or len(paramArray) > 1:# if values where passed by input pipe or in a file but there are multiple params
                 inputValues = shlex.split(valuesFileContent)# split on space but preserve what is between quotes
             else: 
                 inputValues = [valuesFileContent] # value where passed using -f option
-            
-           
+
+
             if len(inputValues) >= mandatoryParamLen: 
                 i = 0  
                 # Fill entry parameters
@@ -107,7 +104,7 @@ class MpModule:
                     paramArray[i].value = inputValues[i]
                     i += 1
                     allMandatoryParamFilled = True
-                        
+
         if not allMandatoryParamFilled:
             # if input was not provided
             logging.warning("   [!] Could not find some mandatory input parameters. Please provide the next values:")
@@ -116,7 +113,7 @@ class MpModule:
                 if param.value is None or param.value == "" or param.value.isspace():
                     newValue = None
                     while newValue is None or newValue == "" or newValue.isspace():
-                        newValue = input("    %s:" % param.name)
+                        newValue = input(f"    {param.name}:")
                     param.value = newValue
      
 
@@ -128,16 +125,15 @@ class MpModule:
         vbaFiles = self.getVBAFiles()
         if len(vbaFiles)==1:
             result = vbaFiles[0]
-        else:
-            if self.startFunction is not None:
-                for vbaFile in vbaFiles:
-                    if os.stat(vbaFile).st_size != 0:
-                        with open(vbaFile, 'rb', 0) as file, mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as s:
-                            if s.find(self.startFunction.encode()) != -1:
-                                result = vbaFile
-                                break
-        logging.debug("    [*] Start function:%s" % self.startFunction)
-        logging.debug("    [*] Main VBA file:%s" % result)
+        elif self.startFunction is not None:
+            for vbaFile in vbaFiles:
+                if os.stat(vbaFile).st_size != 0:
+                    with open(vbaFile, 'rb', 0) as file, mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as s:
+                        if s.find(self.startFunction.encode()) != -1:
+                            result = vbaFile
+                            break
+        logging.debug(f"    [*] Start function:{self.startFunction}")
+        logging.debug(f"    [*] Main VBA file:{result}")
         if not self.startFunction:
             logging.error("   [!] Error: Could not find a start function, please use --start-function=FUNCTION_NAME")
         return result
@@ -165,17 +161,16 @@ class MpModule:
         """
         if moduleName is None:
             moduleName = utils.randomAlpha(9)
-            modulePath = os.path.join(self.workingPath,moduleName+".vba")
+            modulePath = os.path.join(self.workingPath, f"{moduleName}.vba")
         else:
-            modulePath = os.path.join(self.workingPath,utils.randomAlpha(9)+".vba")
+            modulePath = os.path.join(self.workingPath, f"{utils.randomAlpha(9)}.vba")
         if moduleName in self.mpSession.vbModulesList:
-            logging.debug("    [,] %s module already loaded" % moduleName)
+            logging.debug(f"    [,] {moduleName} module already loaded")
         else:
-            logging.debug("    [,] Adding module: %s" % moduleName)
+            logging.debug(f"    [,] Adding module: {moduleName}")
             self.mpSession.vbModulesList.append(moduleName)
-            f = open(modulePath, 'w')
-            f.write(moduleContent)
-            f.close()
+            with open(modulePath, 'w') as f:
+                f.write(moduleContent)
         return modulePath
     
     
@@ -192,16 +187,11 @@ class MpModule:
                 moduleContent = vbaLib.VBA_PPT
             else:
                 moduleContent = vbaLib.VBA
+        elif self.outputFileType in [MSTypes.HTA, MSTypes.SCT] and hasattr(vbaLib, 'VBS_HTA'):
+            moduleContent = vbaLib.VBS_HTA
         else:
-            if self.outputFileType in [MSTypes.HTA, MSTypes.SCT] and hasattr(vbaLib, 'VBS_HTA'):
-                moduleContent = vbaLib.VBS_HTA
-            else:
-                if hasattr(vbaLib, 'VBS'):
-                    moduleContent = vbaLib.VBS
-                else:
-                    moduleContent = vbaLib.VBA
-        newModuleName = self.addVBAModule(moduleContent, vbaLib.__name__)
-        return newModuleName
+            moduleContent = vbaLib.VBS if hasattr(vbaLib, 'VBS') else vbaLib.VBA
+        return self.addVBAModule(moduleContent, vbaLib.__name__)
 
 
     def getVBLibContent(self, vbaLib):
@@ -209,25 +199,23 @@ class MpModule:
         Return VBA code Library module depending on the current context
         """
         moduleContent = ''
-        if self.outputFileType in MSTypes.MS_OFFICE_FORMATS or self.mpSession.runInExcel:
+        if self.outputFileType in MSTypes.MS_OFFICE_FORMATS:
             if MSTypes.WD in self.outputFileType and hasattr(vbaLib, 'VBA_WD') and not self.mpSession.runInExcel:
                 moduleContent = vbaLib.VBA_WD
             elif hasattr(vbaLib, 'VBA_XL') and (MSTypes.XL in self.outputFileType or self.mpSession.runInExcel):
-                logging.debug("     [,] Add Excel version of module %s " % vbaLib)
+                logging.debug(f"     [,] Add Excel version of module {vbaLib} ")
                 moduleContent = vbaLib.VBA_XL
             elif MSTypes.PPT in self.outputFileType and hasattr(vbaLib, 'VBA_PPT'):
                 moduleContent = vbaLib.VBA_PPT
             else:
                 moduleContent = vbaLib.VBA
+        elif self.mpSession.runInExcel:
+            moduleContent = vbaLib.VBA
+        elif self.outputFileType in [MSTypes.HTA, MSTypes.SCT] and hasattr(vbaLib, 'VBS_HTA'):
+            logging.debug(f"     [,] Add HTA version of module {vbaLib} ")
+            moduleContent = vbaLib.VBS_HTA
         else:
-            if self.outputFileType in [MSTypes.HTA, MSTypes.SCT] and hasattr(vbaLib, 'VBS_HTA'):
-                logging.debug("     [,] Add HTA version of module %s " % vbaLib)
-                moduleContent = vbaLib.VBS_HTA
-            else:
-                if hasattr(vbaLib, 'VBS'):
-                    moduleContent = vbaLib.VBS
-                else:
-                    moduleContent = vbaLib.VBA
+            moduleContent = vbaLib.VBS if hasattr(vbaLib, 'VBS') else vbaLib.VBA
         return moduleContent
     
     
@@ -235,44 +223,46 @@ class MpModule:
         """
         Insert some code at targetLine (number) at targetFunction in targetModule
         """
-        logging.debug("     [,] Opening "+ targetFunction + " in " + targetModule + " to inject code...")
-        f = open(targetModule)
-        content = f.readlines()
-        f.close()
-        
+        logging.debug(
+            f"     [,] Opening {targetFunction} in {targetModule} to inject code..."
+        )
+
+        with open(targetModule) as f:
+            content = f.readlines()
         for n,line in enumerate(content):
-            matchObj = re.match(r'.*(Sub|Function)\s+%s\s*\(.*\).*' % targetFunction, line, re.M|re.I)
-            if matchObj:  
-                logging.debug("     [,] Found " + targetFunction + " ") 
+            if matchObj := re.match(
+                r'.*(Sub|Function)\s+%s\s*\(.*\).*' % targetFunction,
+                line,
+                re.M | re.I,
+            ):
+                logging.debug(f"     [,] Found {targetFunction} ")
                 content[n+targetLine] = content[n+targetLine]+ vbaCode+"\n"
                 break
-        
-        
-        logging.debug("     [,] New content: \n " + "".join(content) + "\n\n ") 
-        f = open(targetModule, 'w')
-        f.writelines(content)
-        f.close()
+
+
+        logging.debug("     [,] New content: \n " + "".join(content) + "\n\n ")
+        with open(targetModule, 'w') as f:
+            f.writelines(content)
     
     
     def getAutoOpenFunction(self):
         """ Return the VBA Function/Sub name which triggers auto open for the current outputFileType """
         if MSTypes.WD in self.outputFileType:
-            result = "AutoOpen"
+            return "AutoOpen"
         elif MSTypes.XL in self.outputFileType:
-            result = "Workbook_Open"
+            return "Workbook_Open"
         elif MSTypes.PPT in self.outputFileType:
-            result = "AutoOpen"
+            return "AutoOpen"
         elif MSTypes.MPP in self.outputFileType:
-            result = "Auto_Open"
+            return "Auto_Open"
         elif MSTypes.VSD in self.outputFileType:
-            result = "Document_DocumentOpened"
+            return "Document_DocumentOpened"
         elif MSTypes.ACC in self.outputFileType:
-            result = "AutoExec"
+            return "AutoExec"
         elif MSTypes.PUB in self.outputFileType:
-            result = "Document_Open"
+            return "Document_Open"
         else:
-            result = "AutoOpen"
-        return result
+            return "AutoOpen"
             
     
         

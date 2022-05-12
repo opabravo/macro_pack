@@ -33,7 +33,7 @@ class GlkGenerator(PayloadBuilder):
     
     def generate(self):
                 
-        logging.info(" [+] Generating %s file..." % self.outputFileType)
+        logging.info(f" [+] Generating {self.outputFileType} file...")
         paramArray = [MPParam("targetUrl")]
         self.fillInputParams(paramArray)
         targetUrl= getParamValue(paramArray, "targetUrl")
@@ -41,13 +41,10 @@ class GlkGenerator(PayloadBuilder):
         # Complete template
         glkContent = GLK_TEMPLATE
         glkContent = glkContent.replace("<<<URL>>>", targetUrl)
-             
-        # Write in new SCF file
-        f = open(self.outputFilePath, 'w')
-        f.writelines(glkContent)
-        f.close()
-        
-        logging.info("   [-] Generated GLK file: %s" % self.outputFilePath)
+
+        with open(self.outputFilePath, 'w') as f:
+            f.writelines(glkContent)
+        logging.info(f"   [-] Generated GLK file: {self.outputFilePath}")
         logging.info("   [-] Test with : \n Click on %s file to test.\n" % self.outputFilePath)
         
 

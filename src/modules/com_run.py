@@ -25,12 +25,12 @@ class ComGenerator(MpModule):
     
     def run(self):
         # Extract information
-        
-        logging.info(" [+] Running %s on local PC..." % self.comTarget)
+
+        logging.info(f" [+] Running {self.comTarget} on local PC...")
         if not os.path.isfile(self.comTarget):
-            logging.error("   [!] Could not find %s " % self.comTarget)
+            logging.error(f"   [!] Could not find {self.comTarget} ")
             return
-        
+
         targetApp = MSTypes.guessApplicationType(self.comTarget)
         if MSTypes.XL in targetApp or MSTypes.SYLK in targetApp:
             comApp = "Excel.Application"
@@ -45,20 +45,23 @@ class ComGenerator(MpModule):
         elif MSTypes.MPP in targetApp:
             comApp = "MSProject.Application"
         else:
-            logging.error("   [!] Could not recognize file extension for %s" % self.comTarget)
+            logging.error(
+                f"   [!] Could not recognize file extension for {self.comTarget}"
+            )
+
             return
-        
-        
+
+
         try:
             logging.info("   [-] Create handler...")
             comObj = win32com.client.Dispatch(comApp)
         except:
             logging.exception("   [!] Cannot access COM!")
             return 
-    
+
         # We need to force run macro if it is not triggered at document open
         if self.startFunction and self.startFunction not in self.potentialStartFunctions:
-            logging.info("   [-] Run macro %s..." % self.startFunction)
+            logging.info(f"   [-] Run macro {self.startFunction}...")
         else:
             logging.info("   [-] No specific start function, running auto open macro...")
 
@@ -83,10 +86,10 @@ class ComGenerator(MpModule):
                 document = comObj.run(self.startFunction)
         except Exception:
             logging.exception("   [!] Problem detected!")
-        
+
         time.sleep(3.5) # need to have app alive to launch async call with --background option
 
-                
+
         logging.info("   [-] Cleanup...")
         try:
             document.close()
@@ -103,7 +106,7 @@ class ComGenerator(MpModule):
             pass
         # garbage collection
         del comObj
-        
+
         logging.info("   [-] OK!") 
         
 

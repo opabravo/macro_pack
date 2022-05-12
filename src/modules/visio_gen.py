@@ -35,7 +35,7 @@ class VisioGenerator(VBAGenerator):
         del objVisio
         # Next change/set AccessVBOM registry value to 1
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\Visio\\Security"
-        logging.info("   [-] Set %s to 1..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 1...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,1) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -45,7 +45,7 @@ class VisioGenerator(VBAGenerator):
         # Disable writing in VBA project
         #  Change/set AccessVBOM registry value to 0
         keyval = "Software\\Microsoft\Office\\"  + self.version + "\\Visio\\Security"
-        logging.info("   [-] Set %s to 0..." % keyval)
+        logging.info(f"   [-] Set {keyval} to 0...")
         Registrykey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,keyval)
         winreg.SetValueEx(Registrykey,"AccessVBOM",0,winreg.REG_DWORD,0) # "REG_DWORD"
         winreg.CloseKey(Registrykey)
@@ -73,16 +73,17 @@ class VisioGenerator(VBAGenerator):
         logging.info(" [+] Generating MS Visio document...")
         try:
             self.enableVbom()
-    
+
             logging.info("   [-] Open document...")
             # open up an instance of Visio with the win32com driver
             visio = win32com.client.Dispatch("Visio.InvisibleApp")
-            # do the operation in background without actually opening Visio    
+            # do the operation in background without actually opening Visio
+
             document = visio.Documents.Add("")
-    
-            logging.info("   [-] Save document format...")        
+
+            logging.info("   [-] Save document format...")
             document.SaveAs(self.outputFilePath)
-                
+
             self.resetVBAEntryPoint()
             logging.info("   [-] Inject VBA...")
             # Read generated files
@@ -98,11 +99,11 @@ class VisioGenerator(VBAGenerator):
                         visioModule = document.VBProject.VBComponents.Add(1)
                         visioModule.Name = os.path.splitext(os.path.basename(vbaFile))[0]
                         visioModule.CodeModule.AddFromString(macro)
-            
+
             # Remove Informations
             logging.info("   [-] Remove hidden data and personal info...")
             document.RemovePersonalInformation = True
-            
+
             # save the document and close
             document.Save()
             document.Close()
@@ -110,10 +111,13 @@ class VisioGenerator(VBAGenerator):
             # garbage collection
             del visio
             self.disableVbom()
-    
-            logging.info("   [-] Generated %s file path: %s" % (self.outputFileType, self.outputFilePath))
+
+            logging.info(
+                f"   [-] Generated {self.outputFileType} file path: {self.outputFilePath}"
+            )
+
             logging.info("   [-] Test with : \n%s --run %s\n" % (utils.getRunningApp(),self.outputFilePath))
-        
+
         except Exception:
             logging.exception(" [!] Exception caught!")
             logging.error(" [!] Hints: Check if MS office is really closed and Antivirus did not catch the files")
